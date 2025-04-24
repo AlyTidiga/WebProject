@@ -1,0 +1,110 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Depression Prediction</title>
+    <!-- Google Fonts (Roboto) -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Local styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=4">
+</head>
+<body>
+    <header>
+        <h1>Depression Prediction for Students</h1>
+        <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+    </header>
+    <main>
+        <form id="prediction-form" class="prediction-form-background" method="POST" action="{{ url_for('predict') }}">
+            <div class="form-group">
+                <label for="Age">Age:</label>
+                <input type="number" id="Age" name="Age" class="form-control" required min="0" max="100" step="1">
+                <span class="error-message" id="Age-error"></span>
+            </div>
+            <div class="form-group">
+                <label for="Academic Pressure">Academic Pressure (1-10):</label>
+                <input type="number" id="Academic Pressure" name="Academic Pressure" class="form-control" required min="1" max="10" step="0.1">
+                <span class="error-message" id="Academic Pressure-error"></span>
+            </div>
+            <div class="form-group">
+                <label for="Work Pressure">Work Pressure (1-10):</label>
+                <input type="number" id="Work Pressure" name="Work Pressure" class="form-control" required min="1" max="10" step="0.1">
+                <span class="error-message" id="Work Pressure-error"></span>
+            </div>
+            <div class="form-group">
+                <label for="CGPA">Cumulative GPA (0-4):</label>
+                <input type="number" id="CGPA" name="CGPA" class="form-control" required min="0" max="4" step="0.1">
+                <span class="error-message" id="CGPA-error"></span>
+            </div>
+            <div class="form-group">
+                <label for="Study Satisfaction">Study Satisfaction (1-10):</label>
+                <input type="number" id="Study Satisfaction" name="Study Satisfaction" class="form-control" required min="1" max="10" step="0.1">
+                <span class="error-message" id="Study Satisfaction-error"></span>
+            </div>
+            <div class="form-group">
+                <label for="Job Satisfaction">Job Satisfaction (1-10):</label>
+                <input type="number" id="Job Satisfaction" name="Job Satisfaction" class="form-control" required min="1" max="10" step="0.1">
+                <span class="error-message" id="Job Satisfaction-error"></span>
+            </div>
+            <div class="form-group">
+                <label for="Sleep Duration">Sleep Duration (hours):</label>
+                <input type="number" id="Sleep Duration" name="Sleep Duration" class="form-control" required min="0" max="24" step="0.1">
+                <span class="error-message" id="Sleep Duration-error"></span>
+            </div>
+            <div class="form-group">
+                <label for="Work/Study Hours">Work/Study Hours per Day:</label>
+                <input type="number" id="Work/Study Hours" name="Work/Study Hours" class="form-control" required min="0" max="24" step="0.1">
+                <span class="error-message" id="Work/Study Hours-error"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">Predict</button>
+        </form>
+
+        {% if prediction %}
+        <div class="result">
+            <h2>Result:</h2>
+            <p class="prediction-text">Prediction: {{ prediction }}</p>
+            <p class="probability-text">Probability: {{ probability }}%</p>
+        </div>
+        {% endif %}
+    </main>
+    <script src="{{ url_for('static', filename='js/script.js') }}?v=4"></script>
+</body>
+</html>
