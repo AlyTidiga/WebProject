@@ -11,7 +11,7 @@ app.secret_key = 'a1b2c3d4e5f6g7h8i9j0k1l2'  # Secure secret key
 
 # Function to connect to the database
 def get_db_connection():
-    conn = sqlite3.connect('users.db')
+    conn = sqlite3.connect('users.db', timeout=10)  # Set timeout to 10 seconds
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -49,33 +49,35 @@ def register():
 
         # Validate input
         if not username or not email or not password:
-            return render_template('register.html', error='All fields are required.')
+            return render_template('register.html', error='Tous les champs sont requis.')
 
         # Connect to the database
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Check if username or email already exists
-        cursor.execute('SELECT * FROM users WHERE username = ? OR email = ?', (username, email))
-        existing_user = cursor.fetchone()
-
-        if existing_user:
-            conn.close()
-            return render_template('register.html', error='Username or email already exists.')
-
-        # Hash the password and insert the new user
-        password_hash = generate_password_hash(password)
         try:
+            # Check if username or email already exists
+            cursor.execute('SELECT * FROM users WHERE username = ? OR email = ?', (username, email))
+            existing_user = cursor.fetchone()
+
+            if existing_user:
+                return render_template('register.html', error='Nom d\'utilisateur ou email déjà existant.')
+
+            # Hash the password and insert the new user
+            password_hash = generate_password_hash(password)
             cursor.execute('''
                 INSERT INTO users (username, email, password_hash)
                 VALUES (?, ?, ?)
             ''', (username, email, password_hash))
             conn.commit()
-            conn.close()
-            return redirect(url_for('login'))
-        except sqlite3.IntegrityError:
-            conn.close()
-            return render_template('register.html', error='Registration failed. Try again.')
+        except sqlite3.OperationalError as e:
+            conn.rollback()
+            return render_template('register.html', error=f'Erreur de base de données : {str(e)}')
+        finally:
+            cursor.close()
+            conn.close()  # Ensure connection is closed
+
+        return redirect(url_for('login'))
 
     return render_template('register.html')
 
@@ -89,17 +91,24 @@ def login():
         # Connect to the database
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
-        user = cursor.fetchone()
-        conn.close()
 
-        # Verify credentials
-        if user and check_password_hash(user['password_hash'], password):
-            session['logged_in'] = True
-            session['username'] = username
-            return redirect(url_for('predict_form'))
-        else:
-            return render_template('login.html', error='Invalid username or password.')
+        try:
+            cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
+            user = cursor.fetchone()
+
+            # Verify credentials
+            if user and check_password_hash(user['password_hash'], password):
+                session['logged_in'] = True
+                session['username'] = username
+                return redirect(url_for('predict_form'))
+            else:
+                return render_template('login.html', error='Nom d\'utilisateur ou mot de passe invalide.')
+        except sqlite3.OperationalError as e:
+            return render_template('login.html', error=f'Erreur de base de données : {str(e)}')
+        finally:
+            cursor.close()
+            conn.close()  # Ensure connection is closed
+
     return render_template('login.html')
 
 # Route for the prediction form
@@ -148,12 +157,12 @@ def predict():
         prediction_proba = model.predict_proba(input_df)[0][1]
 
         # Convert prediction to readable text
-        result = 'Depressed' if prediction == 1 else 'Not Depressed'
+        result = 'Déprimé' if prediction == 1 else 'Non déprimé'
 
         return render_template('index.html', prediction=result, probability=round(prediction_proba * 100, 2))
 
     except Exception as e:
-        return render_template('index.html', prediction=f"Error: {str(e)}")
+        return render_template('index.html', prediction=f"Erreur : {str(e)}")
 
 # Route for logout
 @app.route('/logout', methods=['GET'])

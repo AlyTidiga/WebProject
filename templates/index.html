@@ -41,70 +41,84 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Depression Prediction</title>
+    <title>Prédiction de la Dépression</title>
     <!-- Google Fonts (Roboto) -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <!-- Local styles -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=4">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=7">
 </head>
-<body>
+<body class="prediction-page">
     <header>
-        <h1>Depression Prediction for Students</h1>
-        <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+        <h1>Prédiction de la Dépression pour les Étudiants</h1>
+        <a href="{{ url_for('logout') }}" class="btn btn-secondary">Déconnexion</a>
     </header>
     <main>
         <form id="prediction-form" class="prediction-form-background" method="POST" action="{{ url_for('predict') }}">
-            <div class="form-group">
-                <label for="Age">Age:</label>
-                <input type="number" id="Age" name="Age" class="form-control" required min="0" max="100" step="1">
-                <span class="error-message" id="Age-error"></span>
+            <div class="form-grid">
+                <!-- Colonne gauche -->
+                <div class="form-column">
+                    <div class="form-group">
+                        <label for="Age">Âge :</label>
+                        <input type="number" id="Age" name="Age" class="form-control" required min="0" max="100" step="1">
+                        <span class="error-message" id="Age-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="Academic Pressure">Pression Académique (1-10) :</label>
+                        <input type="number" id="Academic Pressure" name="Academic Pressure" class="form-control" required min="1" max="10" step="0.1">
+                        <span class="error-message" id="Academic Pressure-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="Work Pressure">Pression Professionnelle (1-10) :</label>
+                        <input type="number" id="Work Pressure" name="Work Pressure" class="form-control" required min="1" max="10" step="0.1">
+                        <span class="error-message" id="Work Pressure-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="CGPA">Moyenne Cumulative (0-4) :</label>
+                        <input type="number" id="CGPA" name="CGPA" class="form-control" required min="0" max="4" step="0.1">
+                        <span class="error-message" id="CGPA-error"></span>
+                    </div>
+                </div>
+                <!-- Colonne droite -->
+                <div class="form-column">
+                    <div class="form-group">
+                        <label for="Study Satisfaction">Satisfaction des Études (1-10) :</label>
+                        <input type="number" id="Study Satisfaction" name="Study Satisfaction" class="form-control" required min="1" max="10" step="0.1">
+                        <span class="error-message" id="Study Satisfaction-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="Job Satisfaction">Satisfaction Professionnelle (1-10) :</label>
+                        <input type="number" id="Job Satisfaction" name="Job Satisfaction" class="form-control" required min="1" max="10" step="0.1">
+                        <span class="error-message" id="Job Satisfaction-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="Sleep Duration">Durée du Sommeil (heures) :</label>
+                        <input type="number" id="Sleep Duration" name="Sleep Duration" class="form-control" required min="0" max="24" step="0.1">
+                        <span class="error-message" id="Sleep Duration-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="Work/Study Hours">Heures de Travail/Étude par Jour :</label>
+                        <input type="number" id="Work/Study Hours" name="Work/Study Hours" class="form-control" required min="0" max="24" step="0.1">
+                        <span class="error-message" id="Work/Study Hours-error"></span>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="Academic Pressure">Academic Pressure (1-10):</label>
-                <input type="number" id="Academic Pressure" name="Academic Pressure" class="form-control" required min="1" max="10" step="0.1">
-                <span class="error-message" id="Academic Pressure-error"></span>
+            <!-- Champ Total Pressure (calculé) -->
+            <div class="form-group total-pressure">
+                <label for="Total Pressure">Pression Totale (calculée) :</label>
+                <input type="number" id="Total Pressure" name="Total Pressure" class="form-control" readonly>
+                <span class="error-message" id="Total Pressure-error"></span>
             </div>
-            <div class="form-group">
-                <label for="Work Pressure">Work Pressure (1-10):</label>
-                <input type="number" id="Work Pressure" name="Work Pressure" class="form-control" required min="1" max="10" step="0.1">
-                <span class="error-message" id="Work Pressure-error"></span>
-            </div>
-            <div class="form-group">
-                <label for="CGPA">Cumulative GPA (0-4):</label>
-                <input type="number" id="CGPA" name="CGPA" class="form-control" required min="0" max="4" step="0.1">
-                <span class="error-message" id="CGPA-error"></span>
-            </div>
-            <div class="form-group">
-                <label for="Study Satisfaction">Study Satisfaction (1-10):</label>
-                <input type="number" id="Study Satisfaction" name="Study Satisfaction" class="form-control" required min="1" max="10" step="0.1">
-                <span class="error-message" id="Study Satisfaction-error"></span>
-            </div>
-            <div class="form-group">
-                <label for="Job Satisfaction">Job Satisfaction (1-10):</label>
-                <input type="number" id="Job Satisfaction" name="Job Satisfaction" class="form-control" required min="1" max="10" step="0.1">
-                <span class="error-message" id="Job Satisfaction-error"></span>
-            </div>
-            <div class="form-group">
-                <label for="Sleep Duration">Sleep Duration (hours):</label>
-                <input type="number" id="Sleep Duration" name="Sleep Duration" class="form-control" required min="0" max="24" step="0.1">
-                <span class="error-message" id="Sleep Duration-error"></span>
-            </div>
-            <div class="form-group">
-                <label for="Work/Study Hours">Work/Study Hours per Day:</label>
-                <input type="number" id="Work/Study Hours" name="Work/Study Hours" class="form-control" required min="0" max="24" step="0.1">
-                <span class="error-message" id="Work/Study Hours-error"></span>
-            </div>
-            <button type="submit" class="btn btn-primary">Predict</button>
+            <button type="submit" class="btn btn-primary">Prédire</button>
         </form>
 
         {% if prediction %}
         <div class="result">
-            <h2>Result:</h2>
-            <p class="prediction-text">Prediction: {{ prediction }}</p>
-            <p class="probability-text">Probability: {{ probability }}%</p>
+            <h2>Résultat :</h2>
+            <p class="prediction-text">Prédiction : {{ prediction }}</p>
+            <p class="probability-text">Probabilité : {{ probability }}%</p>
         </div>
         {% endif %}
     </main>
-    <script src="{{ url_for('static', filename='js/script.js') }}?v=4"></script>
+    <script src="{{ url_for('static', filename='js/script.js') }}?v=7"></script>
 </body>
 </html>
